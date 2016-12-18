@@ -161,7 +161,7 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 		break;
 
 	case SUMD_DECODE_STATE_GOT_STATE:
-		if (byte >= 2 && byte <= SUMD_MAX_CHANNELS) {
+		if (byte >= 4 && byte <= SUMD_MAX_CHANNELS) {
 			_rxpacket.length = byte;
 
 			if (_sumd) {
