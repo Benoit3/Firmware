@@ -180,7 +180,6 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 				_crc8 = sumd_crc8(_crc8, byte);
 			}
 
-			_rxlen++;
 			_decode_state = SUMD_DECODE_STATE_GOT_LEN;
 
 			if (_debug) {
@@ -205,9 +204,9 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 
 		_rxlen++;
 
-		if (_rxlen <= ((_rxpacket.length * 2))) {
+		if (_rxlen < ((_rxpacket.length * 2))) {
 			if (_debug) {
-				printf(" SUMD_DECODE_STATE_GOT_DATA[%d]: %x\n", _rxlen - 2, byte) ;
+				printf(" SUMD_DECODE_STATE_GOT_DATA[%d]: %x\n", _rxlen, byte) ;
 			}
 
 		} else {
@@ -301,7 +300,7 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 			}
 
 			if (_debug) {
-				printf(" RXLEN: %d  [Chans: %d] \n\n", _rxlen - 1, (_rxlen - 1) / 2) ;
+				printf(" RXLEN: %d  [Chans: %d] \n\n", _rxlen, (_rxlen + 1) / 2) ;
 			}
 
 			ret = 0;
@@ -325,25 +324,25 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 			/* reorder first 4 channels */
 
 			/* ch1 = roll -> sumd = ch2 */
-			channels[0] = (uint16_t)((_rxpacket.sumd_data[1 * 2 + 1] << 8) | _rxpacket.sumd_data[1 * 2 + 2]) >> 3;
+			channels[0] = (uint16_t)((_rxpacket.sumd_data[1 * 2] << 8) | _rxpacket.sumd_data[1 * 2 + 1]) >> 3;
 			/* ch2 = pitch -> sumd = ch2 */
-			channels[1] = (uint16_t)((_rxpacket.sumd_data[2 * 2 + 1] << 8) | _rxpacket.sumd_data[2 * 2 + 2]) >> 3;
+			channels[1] = (uint16_t)((_rxpacket.sumd_data[2 * 2] << 8) | _rxpacket.sumd_data[2 * 2 + 1]) >> 3;
 			/* ch3 = throttle -> sumd = ch2 */
-			channels[2] = (uint16_t)((_rxpacket.sumd_data[0 * 2 + 1] << 8) | _rxpacket.sumd_data[0 * 2 + 2]) >> 3;
+			channels[2] = (uint16_t)((_rxpacket.sumd_data[0 * 2] << 8) | _rxpacket.sumd_data[0 * 2 + 1]) >> 3;
 			/* ch4 = yaw -> sumd = ch2 */
-			channels[3] = (uint16_t)((_rxpacket.sumd_data[3 * 2 + 1] << 8) | _rxpacket.sumd_data[3 * 2 + 2]) >> 3;
+			channels[3] = (uint16_t)((_rxpacket.sumd_data[3 * 2] << 8) | _rxpacket.sumd_data[3 * 2 + 1]) >> 3;
 
 			/* we start at channel 5(index 4) */
 			unsigned chan_index = 4;
 
 			for (i = 4; i < _rxpacket.length; i++) {
 				if (_debug) {
-					printf("ch[%d] : %x %x [ %x    %d ]\n", i + 1, _rxpacket.sumd_data[i * 2 + 1], _rxpacket.sumd_data[i * 2 + 2],
-					       ((_rxpacket.sumd_data[i * 2 + 1] << 8) | _rxpacket.sumd_data[i * 2 + 2]) >> 3,
-					       ((_rxpacket.sumd_data[i * 2 + 1] << 8) | _rxpacket.sumd_data[i * 2 + 2]) >> 3);
+					printf("ch[%d] : %x %x [ %x    %d ]\n", i + 1, _rxpacket.sumd_data[i * 2], _rxpacket.sumd_data[i * 2 + 1],
+					       ((_rxpacket.sumd_data[i * 2] << 8) | _rxpacket.sumd_data[i * 2 + 1]) >> 3,
+					       ((_rxpacket.sumd_data[i * 2] << 8) | _rxpacket.sumd_data[i * 2 + 1]) >> 3);
 				}
 
-				channels[chan_index] = (uint16_t)((_rxpacket.sumd_data[i * 2 + 1] << 8) | _rxpacket.sumd_data[i * 2 + 2]) >> 3;
+				channels[chan_index] = (uint16_t)((_rxpacket.sumd_data[i * 2] << 8) | _rxpacket.sumd_data[i * 2 + 1]) >> 3;
 				/* convert values to 1000-2000 ppm encoding in a not too sloppy fashion */
 				//channels[chan_index] = (uint16_t)(channels[chan_index] * SUMD_SCALE_FACTOR + .5f) + SUMD_SCALE_OFFSET;
 
