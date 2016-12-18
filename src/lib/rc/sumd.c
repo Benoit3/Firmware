@@ -109,6 +109,17 @@ uint8_t sumd_crc8(uint8_t crc, uint8_t value)
 	return crc;
 }
 
+void start_sumd_decode(uint8_t byte) {
+	_rxpacket.header = byte;
+	_sumd = true;
+	_rxlen = 0;
+	_crc16 = 0x0000;
+	_crc8 = 0x00;
+	_crcOK = false;
+	_crc16 = sumd_crc16(_crc16, byte);
+	_crc8 = sumd_crc8(_crc8, byte);
+}
+
 int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channel_count, uint16_t *channels,
 		uint16_t max_chan_count, bool *failsafe)
 {
@@ -122,14 +133,7 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 		}
 
 		if (byte == SUMD_HEADER_ID) {
-			_rxpacket.header = byte;
-			_sumd = true;
-			_rxlen = 0;
-			_crc16 = 0x0000;
-			_crc8 = 0x00;
-			_crcOK = false;
-			_crc16 = sumd_crc16(_crc16, byte);
-			_crc8 = sumd_crc8(_crc8, byte);
+			start_sumd_decode(byte);
 			_decode_state = SUMD_DECODE_STATE_GOT_HEADER;
 
 			if (_debug) {
@@ -163,6 +167,16 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 				printf(" SUMD_DECODE_STATE_GOT_STATE: %x \n", byte) ;
 			}
 
+		} else if (byte == SUMD_HEADER_ID) {
+			/* first header byte was a spurious one found in the checksum of the last frame */
+			/*=> restart frame decoding */
+			start_sumd_decode(byte);
+			_decode_state = SUMD_DECODE_STATE_GOT_HEADER;
+
+			if (_debug) {
+				printf(" SUMD_DECODE_STATE_GOT_HEADER: %x \n", byte) ;
+			}
+
 		} else {
 			_decode_state = SUMD_DECODE_STATE_UNSYNCED;
 		}
@@ -184,6 +198,17 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 
 			if (_debug) {
 				printf(" SUMD_DECODE_STATE_GOT_LEN: %x (%d) \n", byte, byte) ;
+			}
+
+
+		} else if (byte == SUMD_HEADER_ID) {
+			/* first header byte was a spurious one found in the checksum of the last frame */
+			/*=> restart frame decoding */
+			start_sumd_decode(byte);
+			_decode_state = SUMD_DECODE_STATE_GOT_HEADER;
+
+			if (_debug) {
+				printf(" SUMD_DECODE_STATE_GOT_HEADER: %x \n", byte) ;
 			}
 
 		} else {
