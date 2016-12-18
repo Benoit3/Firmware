@@ -55,35 +55,12 @@ enum SUMD_DECODE_STATE {
 	SUMD_DECODE_STATE_GOT_CRC16_BYTE_2
 };
 
-/*
-const char *decode_states[] = {"UNSYNCED",
-			       "GOT_HEADER",
-			       "GOT_STATE",
-			       "GOT_LEN",
-			       "GOT_DATA",
-			       "GOT_CRC",
-			       "GOT_CRC16_BYTE_1",
-			       "GOT_CRC16_BYTE_2"
-			      };
-*/
-
 uint8_t 	_crc8 	= 0x00;
 uint16_t 	_crc16 = 0x0000;
 bool 		_sumd 		= true;
 bool		_crcOK		= false;
 bool		_debug		= false;
 
-
-/* define range mapping here, -+100% -> 1000..2000 */
-#define SUMD_RANGE_MIN 0.0f
-#define SUMD_RANGE_MAX 4096.0f
-
-#define SUMD_TARGET_MIN 1000.0f
-#define SUMD_TARGET_MAX 2000.0f
-
-/* pre-calculate the floating point stuff as far as possible at compile time */
-#define SUMD_SCALE_FACTOR ((SUMD_TARGET_MAX - SUMD_TARGET_MIN) / (SUMD_RANGE_MAX - SUMD_RANGE_MIN))
-#define SUMD_SCALE_OFFSET (int)(SUMD_TARGET_MIN - (SUMD_SCALE_FACTOR * SUMD_RANGE_MIN + 0.5f))
 
 static enum SUMD_DECODE_STATE _decode_state = SUMD_DECODE_STATE_UNSYNCED;
 static uint8_t _rxlen;
@@ -200,7 +177,6 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 				printf(" SUMD_DECODE_STATE_GOT_LEN: %x (%d) \n", byte, byte) ;
 			}
 
-
 		} else if (byte == SUMD_HEADER_ID) {
 			/* first header byte was a spurious one found in the checksum of the last frame */
 			/*=> restart frame decoding */
@@ -229,7 +205,7 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 
 		_rxlen++;
 
-		if (_rxlen < ((_rxpacket.length * 2))) {
+		if (_rxlen < (_rxpacket.length * 2)) {
 			if (_debug) {
 				printf(" SUMD_DECODE_STATE_GOT_DATA[%d]: %x\n", _rxlen, byte) ;
 			}
@@ -342,7 +318,6 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 			if ((uint16_t)_rxpacket.length > max_chan_count) {
 				_rxpacket.length = (uint8_t) max_chan_count;
 			}
-
 			*channel_count = (uint16_t)_rxpacket.length;
 
 			/* decode the actual packet */
@@ -368,8 +343,6 @@ int sumd_decode(uint8_t byte, uint8_t *rssi, uint8_t *rx_count, uint16_t *channe
 				}
 
 				channels[chan_index] = (uint16_t)((_rxpacket.sumd_data[i * 2] << 8) | _rxpacket.sumd_data[i * 2 + 1]) >> 3;
-				/* convert values to 1000-2000 ppm encoding in a not too sloppy fashion */
-				//channels[chan_index] = (uint16_t)(channels[chan_index] * SUMD_SCALE_FACTOR + .5f) + SUMD_SCALE_OFFSET;
 
 				chan_index++;
 			}
